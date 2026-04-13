@@ -19,7 +19,7 @@
 
 ### 0b. CI (GitHub Actions)
 
-- [ ] **[P0]** Configurer GitHub Actions CI : lint (ruff, mypy, eslint), tests unitaires, build Docker image backend et frontend — déclenché sur PR vers `main`. Utiliser les services GitHub Actions pour PostgreSQL + Redis (pas Docker Compose en CI).
+- [x] **[P0]** Configurer GitHub Actions CI : lint (ruff, mypy, eslint), tests unitaires, build Docker image backend et frontend — déclenché sur PR vers `main`. Utiliser les services GitHub Actions pour PostgreSQL + Redis (pas Docker Compose en CI).
 
 ### 0c. Staging & Production (après validation dev)
 
