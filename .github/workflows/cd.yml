@@ -1,0 +1,225 @@
+name: CD
+
+on:
+  push:
+    branches: [main]        # → déploiement staging automatique
+    tags: ["v*.*.*"]        # → déploiement prod sur tag sémantique (ex: v1.2.3)
+
+concurrency:
+  group: cd-${{ github.ref }}
+  cancel-in-progress: false   # Ne pas annuler un déploiement en cours
+
+permissions:
+  contents: read
+  packages: write             # Écriture GHCR
+
+env:
+  REGISTRY: ghcr.io
+  BACKEND_IMAGE: ghcr.io/${{ github.repository }}/backend
+  FRONTEND_IMAGE: ghcr.io/${{ github.repository }}/frontend
+
+jobs:
+
+  # ── Build & push images ────────────────────────────────────────────────────
+  build-and-push:
+    name: "Build & push Docker images"
+    runs-on: ubuntu-latest
+
+    outputs:
+      image_tag: ${{ steps.meta.outputs.version }}
+      backend_digest: ${{ steps.build-backend.outputs.digest }}
+      frontend_digest: ${{ steps.build-frontend.outputs.digest }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Tags :
+      #   main push  → staging, main-<sha7>
+      #   v* tag     → v1.2.3, latest
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ env.BACKEND_IMAGE }}
+            ${{ env.FRONTEND_IMAGE }}
+          tags: |
+            type=ref,event=branch,suffix=-{{sha}}
+            type=raw,value=staging,enable=${{ github.ref == 'refs/heads/main' }}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+
+      - name: Build & push backend
+        id: build-backend
+        if: hashFiles('backend/Dockerfile') != '' && hashFiles('backend/requirements.txt') != ''
+        uses: docker/build-push-action@v6
+        with:
+          context: backend
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=backend-prod
+          cache-to: type=gha,mode=max,scope=backend-prod
+
+      - name: Build & push frontend
+        id: build-frontend
+        if: hashFiles('frontend/Dockerfile') != '' && hashFiles('frontend/package.json') != ''
+        uses: docker/build-push-action@v6
+        with:
+          context: frontend
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=frontend-prod
+          cache-to: type=gha,mode=max,scope=frontend-prod
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ github.ref == 'refs/heads/main' && secrets.STAGING_API_URL || secrets.PROD_API_URL }}
+
+  # ── Deploy to staging ──────────────────────────────────────────────────────
+  deploy-staging:
+    name: "Deploy → Staging"
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: staging
+      url: ${{ secrets.STAGING_URL }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to staging via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.STAGING_SSH_HOST }}
+          username: ${{ secrets.STAGING_SSH_USER }}
+          key: ${{ secrets.STAGING_SSH_PRIVATE_KEY }}
+          script: |
+            set -euo pipefail
+            cd /opt/medecinai
+
+            # Mise à jour du tag d'image
+            export IMAGE_TAG="${{ needs.build-and-push.outputs.image_tag }}"
+            export GITHUB_REPOSITORY="${{ github.repository }}"
+
+            echo "[CD] Pulling new images (tag: $IMAGE_TAG)..."
+            docker compose -f docker-compose.staging.yml \
+              --env-file /opt/medecinai/.env.staging \
+              pull
+
+            echo "[CD] Running database migrations..."
+            docker compose -f docker-compose.staging.yml \
+              --env-file /opt/medecinai/.env.staging \
+              run --rm backend \
+              sh -c "alembic upgrade head"
+
+            echo "[CD] Restarting services..."
+            docker compose -f docker-compose.staging.yml \
+              --env-file /opt/medecinai/.env.staging \
+              up -d --remove-orphans
+
+            echo "[CD] Waiting for health checks..."
+            sleep 15
+            docker compose -f docker-compose.staging.yml ps
+
+            echo "[CD] Pruning old images..."
+            docker image prune -f --filter "until=24h"
+
+            echo "[CD] Staging deployment complete — $IMAGE_TAG"
+
+      - name: Smoke test staging
+        run: |
+          sleep 10
+          HTTP=$(curl -s -o /dev/null -w "%{http_code}" \
+            --max-time 15 "${{ secrets.STAGING_URL }}/health" || echo "000")
+          if [ "$HTTP" != "200" ]; then
+            echo "Smoke test failed: GET /health returned HTTP $HTTP"
+            exit 1
+          fi
+          echo "Smoke test passed: GET /health → 200"
+
+  # ── Deploy to production ───────────────────────────────────────────────────
+  deploy-prod:
+    name: "Deploy → Production"
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    if: startsWith(github.ref, 'refs/tags/v')
+    environment:
+      name: production
+      url: ${{ secrets.PROD_URL }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to production via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.PROD_SSH_HOST }}
+          username: ${{ secrets.PROD_SSH_USER }}
+          key: ${{ secrets.PROD_SSH_PRIVATE_KEY }}
+          script: |
+            set -euo pipefail
+            cd /opt/medecinai
+
+            export IMAGE_TAG="${{ needs.build-and-push.outputs.image_tag }}"
+            export GITHUB_REPOSITORY="${{ github.repository }}"
+
+            echo "[CD] Pulling production images (tag: $IMAGE_TAG)..."
+            docker compose -f docker-compose.prod.yml \
+              --env-file /opt/medecinai/.env.prod \
+              pull
+
+            echo "[CD] Running database migrations..."
+            docker compose -f docker-compose.prod.yml \
+              --env-file /opt/medecinai/.env.prod \
+              run --rm backend \
+              sh -c "alembic upgrade head"
+
+            echo "[CD] Rolling restart (zero-downtime)..."
+            # Restart backend last, after workers are up
+            docker compose -f docker-compose.prod.yml \
+              --env-file /opt/medecinai/.env.prod \
+              up -d --no-deps celery-worker celery-beat
+
+            docker compose -f docker-compose.prod.yml \
+              --env-file /opt/medecinai/.env.prod \
+              up -d --no-deps backend nginx
+
+            echo "[CD] Waiting for health checks..."
+            sleep 20
+            docker compose -f docker-compose.prod.yml ps
+
+            echo "[CD] Pruning old images..."
+            docker image prune -f --filter "until=48h"
+
+            echo "[CD] Production deployment complete — $IMAGE_TAG"
+
+      - name: Smoke test production
+        run: |
+          sleep 15
+          HTTP=$(curl -s -o /dev/null -w "%{http_code}" \
+            --max-time 15 "${{ secrets.PROD_URL }}/health" || echo "000")
+          if [ "$HTTP" != "200" ]; then
+            echo "Smoke test failed: GET /health returned HTTP $HTTP"
+            exit 1
+          fi
+          echo "Smoke test passed: GET /health → 200"
+
+      - name: Notify deployment
+        if: always()
+        run: |
+          STATUS="${{ job.status }}"
+          TAG="${{ needs.build-and-push.outputs.image_tag }}"
+          echo "Production deployment $STATUS for tag $TAG"
+          # TODO: connecter à Slack/email via secret SLACK_WEBHOOK_URL

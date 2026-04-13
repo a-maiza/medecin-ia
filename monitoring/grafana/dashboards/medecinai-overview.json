@@ -1,0 +1,264 @@
+{
+  "title": "MédecinAI — Overview",
+  "uid": "medecinai-overview",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-1h", "to": "now" },
+  "timezone": "Europe/Paris",
+  "tags": ["medecinai", "production"],
+  "templating": {
+    "list": [
+      {
+        "name": "interval",
+        "type": "interval",
+        "options": [
+          { "text": "1m",  "value": "1m"  },
+          { "text": "5m",  "value": "5m",  "selected": true },
+          { "text": "15m", "value": "15m" },
+          { "text": "1h",  "value": "1h"  }
+        ],
+        "current": { "text": "5m", "value": "5m" }
+      }
+    ]
+  },
+  "panels": [
+
+    {
+      "id": 1,
+      "title": "RAG Pipeline — Latence (p50 / p95)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 5 },
+              { "color": "red",    "value": 10 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, rate(rag_pipeline_duration_seconds_bucket[$interval]))",
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, rate(rag_pipeline_duration_seconds_bucket[$interval]))",
+          "legendFormat": "p95"
+        }
+      ]
+    },
+
+    {
+      "id": 2,
+      "title": "SOAP Generation — Latence (p50 / p95)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green",  "value": null },
+              { "color": "yellow", "value": 3 },
+              { "color": "red",    "value": 5 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, rate(soap_generation_duration_seconds_bucket[$interval]))",
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, rate(soap_generation_duration_seconds_bucket[$interval]))",
+          "legendFormat": "p95"
+        }
+      ]
+    },
+
+    {
+      "id": 3,
+      "title": "LLM — Tokens utilisés / min",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 8 },
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": { "unit": "short", "displayName": "tokens/min" }
+      },
+      "targets": [
+        {
+          "expr": "rate(llm_tokens_used_total[$interval]) * 60",
+          "legendFormat": "tokens/min"
+        }
+      ]
+    },
+
+    {
+      "id": 4,
+      "title": "LLM — Taux d'erreurs API",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 8 },
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green",  "value": null },
+              { "color": "yellow", "value": 0.01 },
+              { "color": "red",    "value": 0.05 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "expr": "rate(llm_api_errors_total[$interval]) / rate(llm_api_calls_total[$interval])",
+          "legendFormat": "error rate"
+        }
+      ]
+    },
+
+    {
+      "id": 5,
+      "title": "HTTP — Taux d'erreurs 5xx",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 8 },
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green",  "value": null },
+              { "color": "yellow", "value": 0.01 },
+              { "color": "red",    "value": 0.05 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{status=~\"5..\"}[$interval])) / sum(rate(http_requests_total[$interval]))",
+          "legendFormat": "5xx rate"
+        }
+      ]
+    },
+
+    {
+      "id": 6,
+      "title": "Sessions transcription actives",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 16 },
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "blue", "value": null }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "expr": "transcription_active_sessions",
+          "legendFormat": "sessions actives"
+        }
+      ]
+    },
+
+    {
+      "id": 7,
+      "title": "Celery — File d'attente (profondeur)",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 16 },
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green",  "value": null },
+              { "color": "yellow", "value": 50 },
+              { "color": "red",    "value": 100 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "expr": "celery_queue_length{queue_name=\"celery\"}",
+          "legendFormat": "pending tasks"
+        }
+      ]
+    },
+
+    {
+      "id": 8,
+      "title": "Backend — Disponibilité",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 16 },
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red",    "value": null },
+              { "color": "yellow", "value": 0.99 },
+              { "color": "green",  "value": 0.999 }
+            ]
+          },
+          "mappings": [
+            { "type": "value", "options": { "1": { "text": "UP" }, "0": { "text": "DOWN" } } }
+          ]
+        }
+      },
+      "targets": [
+        {
+          "expr": "avg_over_time(up{job=\"medecinai_backend\"}[1h])",
+          "legendFormat": "uptime 1h"
+        }
+      ]
+    },
+
+    {
+      "id": 9,
+      "title": "Logs applicatifs (niveau ERROR)",
+      "type": "logs",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 20 },
+      "datasource": "Loki",
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "showTime": true,
+        "showLabels": false,
+        "wrapLogMessage": true
+      },
+      "targets": [
+        {
+          "expr": "{service=\"backend\"} |= \"ERROR\" | json",
+          "legendFormat": ""
+        }
+      ]
+    }
+
+  ]
+}

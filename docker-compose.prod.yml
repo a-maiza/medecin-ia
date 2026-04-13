@@ -1,0 +1,142 @@
+# docker-compose.prod.yml — MédecinAI Production (OVHcloud HDS)
+#
+# Prérequis sur le serveur OVHcloud HDS prod :
+#   - Fichier /opt/medecinai/.env.prod rempli (secrets depuis HSM OVHcloud)
+#   - Services managés OVHcloud : PostgreSQL 16, Redis 7, RabbitMQ managé
+#   - Certificat TLS configuré sur le reverse proxy (Nginx / OVHcloud LB)
+#   - Images taguées avec la version sémantique (ex: v1.2.3) depuis GHCR
+#
+# Lancement :
+#   IMAGE_TAG=v1.2.3 docker compose -f docker-compose.prod.yml \
+#     --env-file /opt/medecinai/.env.prod up -d
+
+services:
+
+  backend:
+    image: ghcr.io/${GITHUB_REPOSITORY}/backend:${IMAGE_TAG}
+    container_name: medecinai_backend_prod
+    restart: always
+    env_file: /opt/medecinai/.env.prod
+    environment:
+      APP_ENV: production
+      DATABASE_SSL: "true"
+    ports:
+      - "127.0.0.1:8000:8000"
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 4G
+        reservations:
+          cpus: "0.5"
+          memory: 1G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "10"
+        labels: "service=backend,env=prod"
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+
+  celery-worker:
+    image: ghcr.io/${GITHUB_REPOSITORY}/backend:${IMAGE_TAG}
+    container_name: medecinai_celery_worker_prod
+    restart: always
+    command: celery -A app.celery_app worker --loglevel=warning --concurrency=8 -Q celery,indexing,sync
+    env_file: /opt/medecinai/.env.prod
+    environment:
+      APP_ENV: production
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"
+          memory: 8G
+        reservations:
+          cpus: "1.0"
+          memory: 2G
+    healthcheck:
+      test: ["CMD", "celery", "-A", "app.celery_app", "inspect", "ping", "-d", "celery@$$HOSTNAME"]
+      interval: 60s
+      timeout: 15s
+      retries: 5
+      start_period: 40s
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "10"
+        labels: "service=celery-worker,env=prod"
+    security_opt:
+      - no-new-privileges:true
+
+  celery-beat:
+    image: ghcr.io/${GITHUB_REPOSITORY}/backend:${IMAGE_TAG}
+    container_name: medecinai_celery_beat_prod
+    restart: always
+    command: celery -A app.celery_app beat --loglevel=warning --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    env_file: /opt/medecinai/.env.prod
+    environment:
+      APP_ENV: production
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
+        labels: "service=celery-beat,env=prod"
+    security_opt:
+      - no-new-privileges:true
+
+  # Nginx reverse proxy — TLS termination, rate limiting, static assets
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: medecinai_nginx_prod
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.prod.conf:/etc/nginx/nginx.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro   # ou certificats OVHcloud
+      - nginx_cache:/var/cache/nginx
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "10"
+        labels: "service=nginx,env=prod"
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  nginx_cache:
+
+networks:
+  default:
+    name: medecinai_prod
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

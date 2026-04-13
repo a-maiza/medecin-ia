@@ -1,0 +1,49 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    env: production
+    app: medecinai
+
+rule_files:
+  - /etc/prometheus/alert_rules.yml
+
+scrape_configs:
+
+  # ── Backend FastAPI ────────────────────────────────────────────────────────
+  - job_name: medecinai_backend
+    static_configs:
+      - targets: ["backend:8000"]
+        labels:
+          service: backend
+    metrics_path: /metrics
+    scrape_interval: 10s
+
+  # ── Celery workers (via flower ou métriques exposées) ─────────────────────
+  - job_name: medecinai_celery
+    static_configs:
+      - targets: ["celery-worker:8001"]
+        labels:
+          service: celery
+    metrics_path: /metrics
+    scrape_interval: 30s
+
+  # ── Prometheus self-monitoring ────────────────────────────────────────────
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # ── Loki ─────────────────────────────────────────────────────────────────
+  - job_name: loki
+    static_configs:
+      - targets: ["loki:3100"]
+    metrics_path: /metrics
+
+  # ── Node exporter (métriques système OVHcloud VM) ─────────────────────────
+  # Démarrer node_exporter sur le serveur hôte (port 9100)
+  - job_name: node_exporter
+    static_configs:
+      - targets: ["host.docker.internal:9100"]
+        labels:
+          instance: ovhcloud_hds
+    scrape_interval: 30s

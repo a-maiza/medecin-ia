@@ -1,0 +1,85 @@
+auth_enabled: false
+
+server:
+  http_listen_port: 3100
+  grpc_listen_port: 9096
+  log_level: warn
+
+common:
+  instance_addr: 127.0.0.1
+  path_prefix: /loki
+  storage:
+    filesystem:
+      chunks_directory: /loki/chunks
+      rules_directory: /loki/rules
+  replication_factor: 1
+  ring:
+    kvstore:
+      store: inmemory
+
+# ── Schéma de stockage ────────────────────────────────────────────────────────
+schema_config:
+  configs:
+    - from: 2024-01-01
+      store: tsdb
+      object_store: filesystem
+      schema: v13
+      index:
+        prefix: index_
+        period: 24h
+
+# ── Ingestion ─────────────────────────────────────────────────────────────────
+ingester:
+  chunk_idle_period: 15m
+  chunk_retain_period: 30s
+  max_chunk_age: 2h
+  wal:
+    enabled: true
+    dir: /loki/wal
+
+# ── Rétention — 10 ans HDS (REQUIREMENTS.md §7) ──────────────────────────────
+# Cold storage OVHcloud Object Storage après 2 ans :
+#   → remplacer object_store: filesystem par object_store: s3 et configurer
+#     storage_config.aws avec les credentials OVH Object Storage Swift/S3.
+compactor:
+  working_directory: /loki/compactor
+  retention_enabled: true
+  retention_delete_delay: 2h
+  retention_delete_worker_count: 150
+  delete_request_store: filesystem
+
+limits_config:
+  retention_period: 87600h    # 10 ans = 10 × 365 × 24h
+  ingestion_rate_mb: 16
+  ingestion_burst_size_mb: 32
+  max_query_series: 10000
+  max_entries_limit_per_query: 50000
+  # Garantir que les logs patients ne sont jamais exposés entre cabinets
+  # via le label filtering appliqué côté applicatif
+  reject_old_samples: true
+  reject_old_samples_max_age: 168h   # 7 jours max de retard d'ingestion
+
+# ── Requêtes ─────────────────────────────────────────────────────────────────
+query_range:
+  results_cache:
+    cache:
+      embedded_cache:
+        enabled: true
+        max_size_mb: 100
+        ttl: 1h
+
+frontend:
+  max_outstanding_per_tenant: 256
+
+# ── Ruler (alerting via Loki) ─────────────────────────────────────────────────
+ruler:
+  storage:
+    type: local
+    local:
+      directory: /loki/rules
+  rule_path: /loki/rules-temp
+  alertmanager_url: ""   # TODO: configurer Alertmanager si nécessaire
+  ring:
+    kvstore:
+      store: inmemory
+  enable_api: true
