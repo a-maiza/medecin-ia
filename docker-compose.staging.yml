@@ -1,0 +1,110 @@
+# docker-compose.staging.yml — MédecinAI Staging
+#
+# Prérequis sur le serveur OVHcloud HDS staging :
+#   - Fichier /opt/medecinai/.env.staging rempli (voir .env.example)
+#   - Services managés OVHcloud accessibles : PostgreSQL, Redis
+#   - RabbitMQ déployé en interne (voir service rabbitmq ci-dessous)
+#   - Images construites et poussées sur GHCR par le pipeline CD
+#
+# Lancement :
+#   docker compose -f docker-compose.staging.yml --env-file /opt/medecinai/.env.staging up -d
+
+services:
+
+  backend:
+    image: ghcr.io/${GITHUB_REPOSITORY}/backend:${IMAGE_TAG:-staging}
+    container_name: medecinai_backend_staging
+    restart: unless-stopped
+    env_file: /opt/medecinai/.env.staging
+    environment:
+      APP_ENV: staging
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
+        labels: "service=backend,env=staging"
+
+  celery-worker:
+    image: ghcr.io/${GITHUB_REPOSITORY}/backend:${IMAGE_TAG:-staging}
+    container_name: medecinai_celery_worker_staging
+    restart: unless-stopped
+    command: celery -A app.celery_app worker --loglevel=info --concurrency=4
+    env_file: /opt/medecinai/.env.staging
+    environment:
+      APP_ENV: staging
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "celery", "-A", "app.celery_app", "inspect", "ping", "-d", "celery@$$HOSTNAME"]
+      interval: 60s
+      timeout: 15s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+        labels: "service=celery-worker,env=staging"
+
+  celery-beat:
+    image: ghcr.io/${GITHUB_REPOSITORY}/backend:${IMAGE_TAG:-staging}
+    container_name: medecinai_celery_beat_staging
+    restart: unless-stopped
+    command: celery -A app.celery_app beat --loglevel=info
+    env_file: /opt/medecinai/.env.staging
+    environment:
+      APP_ENV: staging
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "3"
+        labels: "service=celery-beat,env=staging"
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: medecinai_rabbitmq_staging
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+      RABBITMQ_DEFAULT_VHOST: medecinai
+    # Management UI not exposed publicly — accessible via SSH tunnel only
+    ports:
+      - "127.0.0.1:5672:5672"
+    volumes:
+      - rabbitmq_staging_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+volumes:
+  rabbitmq_staging_data:
+
+networks:
+  default:
+    name: medecinai_staging

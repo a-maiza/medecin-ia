@@ -23,11 +23,11 @@
 
 ### 0c. Staging & Production (après validation dev)
 
-- [ ] **[P1]** Provisionner OVHcloud HDS : VM GPU (T4), PostgreSQL 16 managé, Redis managé, RabbitMQ — réseau privé isolé, accès SSH par clé uniquement, groupes de sécurité restrictifs.
-- [ ] **[P1]** Écrire `docker-compose.staging.yml` et `docker-compose.prod.yml` : images taguées, pas de volumes de dev, secrets injectés via variables d'environnement CI/CD (GitHub Secrets).
-- [ ] **[P1]** Configurer déploiement CD vers staging (OVHcloud) sur merge `main`, et vers prod sur tag `v*`.
-- [ ] **[P1]** Déployer Prometheus + Grafana on-premise HDS avec dashboard latence RAG, usage tokens LLM, taux d'erreur.
-- [ ] **[P1]** Configurer Loki pour ingestion des logs JSON structurés du backend (rétention 10 ans, cold storage après 2 ans).
+- [x] **[P1]** Provisionner OVHcloud HDS : VM GPU (T4), PostgreSQL 16 managé, Redis managé, RabbitMQ — réseau privé isolé, accès SSH par clé uniquement, groupes de sécurité restrictifs.
+- [x] **[P1]** Écrire `docker-compose.staging.yml` et `docker-compose.prod.yml` : images taguées, pas de volumes de dev, secrets injectés via variables d'environnement CI/CD (GitHub Secrets).
+- [x] **[P1]** Configurer déploiement CD vers staging (OVHcloud) sur merge `main`, et vers prod sur tag `v*`.
+- [x] **[P1]** Déployer Prometheus + Grafana on-premise HDS avec dashboard latence RAG, usage tokens LLM, taux d'erreur.
+- [x] **[P1]** Configurer Loki pour ingestion des logs JSON structurés du backend (rétention 10 ans, cold storage après 2 ans).
 
 ---
 

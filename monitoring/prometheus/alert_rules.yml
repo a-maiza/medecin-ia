@@ -1,0 +1,106 @@
+groups:
+
+  - name: medecinai_latency
+    interval: 30s
+    rules:
+
+      - alert: RAGLatencyHigh
+        expr: |
+          histogram_quantile(0.95,
+            rate(rag_pipeline_duration_seconds_bucket[5m])
+          ) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "RAG pipeline p95 > 10s"
+          description: "RAG pipeline p95 latency is {{ $value | humanizeDuration }} (threshold: 10s)."
+
+      - alert: SOAPGenerationSlow
+        expr: |
+          histogram_quantile(0.95,
+            rate(soap_generation_duration_seconds_bucket[5m])
+          ) > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "SOAP generation p95 > 5s"
+          description: "SOAP generation p95 latency is {{ $value | humanizeDuration }} (threshold: 5s)."
+
+      - alert: TranscriptionLatencyHigh
+        expr: |
+          histogram_quantile(0.95,
+            rate(transcription_chunk_duration_seconds_bucket[5m])
+          ) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Transcription chunk p95 > 1s"
+          description: "Whisper transcription p95 is {{ $value | humanizeDuration }} (threshold: 1s)."
+
+  - name: medecinai_errors
+    interval: 30s
+    rules:
+
+      - alert: HighHTTPErrorRate
+        expr: |
+          sum(rate(http_requests_total{status=~"5.."}[5m]))
+          /
+          sum(rate(http_requests_total[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "HTTP 5xx error rate > 5%"
+          description: "5xx error rate is {{ $value | humanizePercentage }} over the last 5 minutes."
+
+      - alert: LLMAPIErrors
+        expr: rate(llm_api_errors_total[5m]) > 0.1
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "LLM API error rate elevated"
+          description: "Claude API error rate: {{ $value | humanize }} errors/s."
+
+      - alert: CeleryTaskFailures
+        expr: rate(celery_task_failed_total[15m]) > 0.05
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Celery task failure rate elevated"
+          description: "Celery tasks failing at {{ $value | humanize }}/s."
+
+  - name: medecinai_resources
+    interval: 60s
+    rules:
+
+      - alert: CeleryQueueDepthHigh
+        expr: celery_queue_length{queue_name="celery"} > 100
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Celery queue depth > 100"
+          description: "Celery queue has {{ $value }} pending tasks."
+
+      - alert: LLMTokenRateHigh
+        expr: rate(llm_tokens_used_total[1h]) > 500000
+        for: 15m
+        labels:
+          severity: info
+        annotations:
+          summary: "LLM token consumption elevated"
+          description: "LLM token usage: {{ $value | humanize }} tokens/hour."
+
+      - alert: BackendDown
+        expr: up{job="medecinai_backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "MédecinAI backend is DOWN"
+          description: "The FastAPI backend has been unreachable for more than 1 minute."
