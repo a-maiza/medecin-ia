@@ -46,14 +46,14 @@
 
 ## 2. Authentification & Onboarding
 
-- [ ] **[P0]** Configurer tenant Auth0 : application web (Authorization Code + PKCE), API audience, règle de vérification du claim `rpps` dans l'access token.
-- [ ] **[P0]** Implémenter `POST /auth/register` (FastAPI) : valider format RPPS (11 chiffres), créer `Medecin` + `Cabinet` + `Subscription` (trial 14j), envoyer email de confirmation SMTP.
-- [ ] **[P0]** Implémenter middleware JWT FastAPI : vérifier `Authorization: Bearer` via Auth0 JWKS, injecter `current_user` (medecin_id, cabinet_id, role) dans le contexte de la requête.
-- [ ] **[P0]** Implémenter pages Next.js `(auth)/login` et `(auth)/register` avec Auth0 SDK (`@auth0/nextjs-auth0`).
-- [ ] **[P0]** Implémenter flow onboarding 3 étapes : profil médecin (spécialité, RPPS) → premier patient de test → première consultation démo.
-- [ ] **[P0]** Implémenter expiration de session après 8h d'inactivité (Auth0 `session.rolling: false`, `session.absoluteDuration: 28800`).
-- [ ] **[P1]** Intégrer Pro Santé Connect (e-CPS) comme provider OAuth2 externe Auth0 : récupérer `rpps` et `specialite` depuis le token PSC, pré-remplir le profil.
-- [ ] **[P1]** Implémenter refresh automatique du JWT côté frontend (intercepteur Axios/fetch, retry transparent sur 401).
+- [x] **[P0]** Configurer tenant Auth0 : application web (Authorization Code + PKCE), API audience, règle de vérification du claim `rpps` dans l'access token.
+- [x] **[P0]** Implémenter `POST /auth/register` (FastAPI) : valider format RPPS (11 chiffres), créer `Medecin` + `Cabinet` + `Subscription` (trial 14j), envoyer email de confirmation SMTP.
+- [x] **[P0]** Implémenter middleware JWT FastAPI : vérifier `Authorization: Bearer` via Auth0 JWKS, injecter `current_user` (medecin_id, cabinet_id, role) dans le contexte de la requête.
+- [x] **[P0]** Implémenter pages Next.js `(auth)/login` et `(auth)/register` avec Auth0 SDK (`@auth0/nextjs-auth0`).
+- [x] **[P0]** Implémenter flow onboarding 3 étapes : profil médecin (spécialité, RPPS) → premier patient de test → première consultation démo.
+- [x] **[P0]** Implémenter expiration de session après 8h d'inactivité (Auth0 `session.rolling: false`, `session.absoluteDuration: 28800`).
+- [x] **[P1]** Intégrer Pro Santé Connect (e-CPS) comme provider OAuth2 externe Auth0 : récupérer `rpps` et `specialite` depuis le token PSC, pré-remplir le profil.
+- [x] **[P1]** Implémenter refresh automatique du JWT côté frontend (intercepteur Axios/fetch, retry transparent sur 401).
 
 ---
 
