@@ -21,6 +21,7 @@ celery[redis]>=5.4.0
 # ── Auth ──────────────────────────────────────────────────────────────────────
 python-jose[cryptography]>=3.3.0
 cryptography>=42.0.0
+aiosmtplib>=3.0.0              # async SMTP for confirmation emails
 
 # ── AI / NLP ──────────────────────────────────────────────────────────────────
 anthropic>=0.28.0
