@@ -1,8 +1,9 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
 
 from app.core.config import get_settings
+from app.middleware.rate_limit import RateLimitMiddleware
 from app.routers import auth
 
 settings = get_settings()
@@ -14,15 +15,36 @@ app = FastAPI(
     redoc_url="/redoc" if settings.APP_ENV != "production" else None,
 )
 
-# ── CORS ──────────────────────────────────────────────────────────────────────
+# ── Rate limiting (Redis) ─────────────────────────────────────────────────────
+# Added before CORS so rate limit runs after CORS headers are attached
+# (Starlette middleware executes in LIFO order — last added = first executed)
+app.add_middleware(
+    RateLimitMiddleware,
+    redis_url=settings.REDIS_URL,
+    enabled=settings.APP_ENV != "test",
+)
+
+# ── CORS — must be added last (executed first in LIFO chain) ──────────────────
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["Authorization", "Content-Type", "Accept"],
-    expose_headers=["X-Request-ID"],
+    expose_headers=["X-Request-ID", "X-RateLimit-Limit", "X-RateLimit-Remaining"],
 )
+
+# ── HSTS (production) ─────────────────────────────────────────────────────────
+# TLS 1.3 is enforced by the Nginx reverse proxy; we add the HSTS header here
+# so it is also present in FastAPI's responses (belt-and-suspenders).
+if settings.APP_ENV == "production":
+    @app.middleware("http")
+    async def add_hsts(request: Request, call_next) -> Response:
+        response = await call_next(request)
+        response.headers["Strict-Transport-Security"] = (
+            "max-age=31536000; includeSubDomains; preload"
+        )
+        return response
 
 # ── Prometheus metrics ────────────────────────────────────────────────────────
 Instrumentator().instrument(app).expose(app, endpoint="/metrics")
