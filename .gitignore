@@ -1,0 +1,135 @@
+# ── Environment & secrets ────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+.env.staging
+.env.production
+*.pem
+*.key
+*.p12
+*.pfx
+
+# ── Python / FastAPI / Celery ────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+var/
+sdist/
+develop-eggs/
+.installed.cfg
+lib/
+lib64/
+.Python
+venv/
+.venv/
+env/
+ENV/
+pip-wheel-metadata/
+.mypy_cache/
+.dmypy.json
+.pyre/
+.ruff_cache/
+.pytest_cache/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+nosetests.xml
+test-results/
+junit.xml
+celerybeat-schedule
+celerybeat.pid
+
+# ── Alembic ──────────────────────────────────────────────────────────
+# Keep migrations directory tracked; ignore only generated __pycache__
+
+# ── AI models (large binary files) ──────────────────────────────────
+*.bin
+*.pt
+*.pth
+*.onnx
+*.safetensors
+*.gguf
+*.pkl
+*.pickle
+ia/models/
+backend/models/
+bm25_index.pkl
+
+# ── Node.js / Next.js ────────────────────────────────────────────────
+node_modules/
+.next/
+.turbo/
+out/
+build/
+.vercel/
+.cache/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.npm
+.eslintcache
+.stylelintcache
+*.tsbuildinfo
+next-env.d.ts
+
+# ── Docker ───────────────────────────────────────────────────────────
+.dockerignore
+
+# ── PostgreSQL / database ────────────────────────────────────────────
+*.sql.bak
+*.dump
+*.pgdump
+pgdata/
+postgres-data/
+
+# ── Redis ────────────────────────────────────────────────────────────
+dump.rdb
+redis-data/
+
+# ── Uploads & generated files ────────────────────────────────────────
+knowledge-base/private/
+uploads/
+tmp/
+*.pdf
+*.docx
+*.xlsx
+*.csv
+
+# ── Logs ─────────────────────────────────────────────────────────────
+*.log
+logs/
+loki-data/
+
+# ── Monitoring ───────────────────────────────────────────────────────
+prometheus-data/
+grafana-data/
+
+# ── macOS ────────────────────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# ── IDEs ─────────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ── OS ───────────────────────────────────────────────────────────────
+Thumbs.db
+ehthumbs.db
+Desktop.ini
