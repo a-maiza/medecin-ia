@@ -4,7 +4,9 @@ FROM node:20-alpine AS deps
 WORKDIR /app
 
 COPY package.json package-lock.json* ./
-RUN npm ci --omit=dev
+# Use npm ci when lock file exists (reproducible prod install),
+# fall back to npm install during initial scaffolding (no lock file yet).
+RUN if [ -f package-lock.json ]; then npm ci --omit=dev; else npm install --omit=dev; fi
 
 
 # ── Stage 2 : builder ─────────────────────────────────────────────────────────
@@ -13,7 +15,7 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 COPY package.json package-lock.json* ./
-RUN npm ci
+RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
 
 COPY . .
 
