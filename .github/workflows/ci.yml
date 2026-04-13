@@ -1,0 +1,285 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# ── Job conditions ────────────────────────────────────────────────────────────
+# backend jobs  : run when backend/ or pyproject.toml changes, or on main push
+# frontend jobs : run when frontend/ changes, or on main push
+# docker jobs   : run when a Dockerfile changes, or on main push
+# All jobs run unconditionally on PRs targeting main (safety net).
+
+jobs:
+
+  # ── Backend : Lint ─────────────────────────────────────────────────────────
+  lint-backend:
+    name: "Backend — Lint & Type-check"
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'pull_request' ||
+      contains(join(github.event.commits.*.modified, ','), 'backend/')
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/pyproject.toml
+
+      - name: Install lint dependencies
+        run: pip install ruff mypy
+
+      - name: Install project dependencies (for mypy)
+        # Install only if requirements.txt exists (not yet in initial scaffold)
+        run: |
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          else
+            echo "No requirements.txt yet — skipping dependency install"
+          fi
+
+      - name: Ruff — lint
+        run: ruff check .
+
+      - name: Ruff — format check
+        run: ruff format --check .
+
+      - name: Mypy — type-check
+        run: |
+          if [ -d app ]; then
+            mypy app/
+          else
+            echo "No app/ directory yet — skipping mypy"
+          fi
+
+  # ── Backend : Tests ────────────────────────────────────────────────────────
+  test-backend:
+    name: "Backend — Tests"
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'pull_request' ||
+      contains(join(github.event.commits.*.modified, ','), 'backend/')
+
+    defaults:
+      run:
+        working-directory: backend
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: medecinai_test
+          POSTGRES_USER: app_user
+          POSTGRES_PASSWORD: test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U app_user -d medecinai_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql+asyncpg://app_user:test_password@localhost:5432/medecinai_test
+      DATABASE_SSL: "false"
+      REDIS_URL: redis://localhost:6379/0
+      APP_ENV: test
+      # Dummy values for tests that import settings — real secrets never in CI
+      PATIENT_ENCRYPTION_MASTER_KEY: "0000000000000000000000000000000000000000000000000000000000000000"
+      ANTHROPIC_API_KEY: "sk-ant-test-key"
+      ANTHROPIC_MODEL: "claude-sonnet-4-6"
+      AUTH0_DOMAIN: "test.auth0.com"
+      AUTH0_AUDIENCE: "https://api.medecinai.fr"
+      APP_SECRET_KEY: "ci-test-secret-key-not-for-production"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/pyproject.toml
+
+      - name: Install dependencies
+        run: |
+          pip install pytest pytest-asyncio pytest-cov
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Enable pgvector extension
+        run: |
+          PGPASSWORD=test_password psql -h localhost -U app_user -d medecinai_test \
+            -c "CREATE EXTENSION IF NOT EXISTS vector;" \
+            -c "CREATE EXTENSION IF NOT EXISTS pg_trgm;" \
+            -c "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";"
+
+      - name: Run migrations
+        run: |
+          if [ -f alembic.ini ]; then
+            pip install alembic
+            alembic upgrade head
+          else
+            echo "No alembic.ini yet — skipping migrations"
+          fi
+
+      - name: Run tests
+        run: |
+          if [ -d tests ]; then
+            pytest tests/ -v --tb=short \
+              --cov=app --cov-report=xml --cov-report=term-missing
+          else
+            echo "No tests/ directory yet — skipping"
+          fi
+
+      - name: Upload coverage report
+        if: success() && hashFiles('backend/coverage.xml') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend/coverage.xml
+          retention-days: 7
+
+  # ── Frontend : Lint & Type-check ───────────────────────────────────────────
+  lint-frontend:
+    name: "Frontend — Lint & Type-check"
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'pull_request' ||
+      contains(join(github.event.commits.*.modified, ','), 'frontend/')
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          if [ -f package.json ]; then
+            npm ci
+          else
+            echo "No package.json yet — skipping"
+            exit 0
+          fi
+
+      - name: ESLint
+        run: |
+          if [ -f package.json ]; then npm run lint; fi
+
+      - name: TypeScript type-check
+        run: |
+          if [ -f tsconfig.json ]; then npx tsc --noEmit; fi
+
+  # ── Frontend : Build ───────────────────────────────────────────────────────
+  build-frontend:
+    name: "Frontend — Build"
+    runs-on: ubuntu-latest
+    needs: lint-frontend
+    if: |
+      github.event_name == 'pull_request' ||
+      contains(join(github.event.commits.*.modified, ','), 'frontend/')
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          if [ -f package.json ]; then npm ci; else exit 0; fi
+
+      - name: Build Next.js
+        run: |
+          if [ -f package.json ]; then npm run build; fi
+        env:
+          # Required by Next.js build — replaced by real values at deploy time
+          NEXT_PUBLIC_API_URL: http://localhost:8000
+
+  # ── Docker : Build (no push) ───────────────────────────────────────────────
+  docker-build:
+    name: "Docker — Build images"
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'pull_request' ||
+      contains(join(github.event.commits.*.modified, ','), 'Dockerfile')
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build backend image
+        if: hashFiles('backend/Dockerfile') != ''
+        uses: docker/build-push-action@v6
+        with:
+          context: backend
+          push: false
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,mode=max,scope=backend
+          tags: medecinai-backend:ci
+
+      - name: Build frontend image
+        if: hashFiles('frontend/Dockerfile') != ''
+        uses: docker/build-push-action@v6
+        with:
+          context: frontend
+          push: false
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,mode=max,scope=frontend
+          tags: medecinai-frontend:ci
+
+  # ── Status gate ────────────────────────────────────────────────────────────
+  # Single job that PR branch-protection rules can target.
+  ci-passed:
+    name: "CI passed"
+    runs-on: ubuntu-latest
+    needs: [lint-backend, test-backend, lint-frontend, build-frontend, docker-build]
+    if: always()
+    steps:
+      - name: Check all jobs
+        run: |
+          results="${{ join(needs.*.result, ' ') }}"
+          if echo "$results" | grep -qE '\bfailure\b'; then
+            echo "One or more CI jobs failed."
+            exit 1
+          fi
+          echo "All CI jobs passed (or were skipped)."
