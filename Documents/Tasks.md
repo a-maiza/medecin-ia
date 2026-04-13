@@ -33,14 +33,14 @@
 
 ## 1. Base de données & Modèle de données
 
-- [ ] **[P0]** Écrire les migrations Alembic pour toutes les entités : `Cabinet`, `Medecin`, `Patient`, `Consultation`, `Document`, `Chunk`, `DrugInteraction`, `AuditLog`, `DoctorStyleChunk`, `ValidationMetric`, `TrainingPair`, `Subscription`.
-- [ ] **[P0]** Ajouter les colonnes générées (`patient_id`, `doctor_id`, `specialty`, `has_grade`) sur `Chunk` avec `GENERATED ALWAYS AS ... STORED`.
-- [ ] **[P0]** Créer les 7 index pgvector HNSW partiels par namespace (CCAM, HAS, VIDAL, patient_history, doctor_corpus) et l'index FTS `gin(to_tsvector('french', text))`.
-- [ ] **[P0]** Créer l'index composite `(patient_id, doctor_id)` sur `chunks` filtré sur `source = 'patient_history'`.
-- [ ] **[P0]** Activer Row-Level Security sur `chunks` et `patients` : policy `SELECT` restreinte par `cabinet_id` pour le rôle applicatif. Écrire `shared/scripts/setup_rls.sql`.
-- [ ] **[P0]** Ajouter contrainte `CHECK (drug_a < drug_b)` et `UNIQUE (drug_a, drug_b)` sur `drug_interactions`.
-- [ ] **[P0]** Rendre `audit_log` append-only : trigger PostgreSQL `BEFORE UPDATE OR DELETE` qui lève une exception.
-- [ ] **[P0]** Écrire `shared/scripts/seed_global_kb.sh` : appelle les jobs Celery d'import CCAM, HAS mémo, BDPM interactions dans le bon ordre.
+- [x] **[P0]** Écrire les migrations Alembic pour toutes les entités : `Cabinet`, `Medecin`, `Patient`, `Consultation`, `Document`, `Chunk`, `DrugInteraction`, `AuditLog`, `DoctorStyleChunk`, `ValidationMetric`, `TrainingPair`, `Subscription`.
+- [x] **[P0]** Ajouter les colonnes générées (`patient_id`, `doctor_id`, `specialty`, `has_grade`) sur `Chunk` avec `GENERATED ALWAYS AS ... STORED`.
+- [x] **[P0]** Créer les 7 index pgvector HNSW partiels par namespace (CCAM, HAS, VIDAL, patient_history, doctor_corpus) et l'index FTS `gin(to_tsvector('french', text))`.
+- [x] **[P0]** Créer l'index composite `(patient_id, doctor_id)` sur `chunks` filtré sur `source = 'patient_history'`.
+- [x] **[P0]** Activer Row-Level Security sur `chunks` et `patients` : policy `SELECT` restreinte par `cabinet_id` pour le rôle applicatif. Écrire `shared/scripts/setup_rls.sql`.
+- [x] **[P0]** Ajouter contrainte `CHECK (drug_a < drug_b)` et `UNIQUE (drug_a, drug_b)` sur `drug_interactions`.
+- [x] **[P0]** Rendre `audit_log` append-only : trigger PostgreSQL `BEFORE UPDATE OR DELETE` qui lève une exception.
+- [x] **[P0]** Écrire `shared/scripts/seed_global_kb.sh` : appelle les jobs Celery d'import CCAM, HAS mémo, BDPM interactions dans le bon ordre.
 
 ---
 
