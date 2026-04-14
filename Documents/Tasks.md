@@ -128,10 +128,10 @@
 
 ## 9. Base de connaissances
 
-- [ ] **[P0]** Implémenter `backend/app/routers/documents.py` : `POST /documents/upload` (multipart, max 50 Mo, PDF/DOCX uniquement), `GET /documents` (liste filtrée par `cabinet_id` ou globale pour admin), `DELETE /documents/{id}` (soft delete `deprecated=true` + exclusion chunks).
-- [ ] **[P0]** Implémenter job Celery `backend/app/jobs/index_document.py` : extraction texte (pdfplumber pour PDF, python-docx pour DOCX), chunking sémantique (512 tokens, overlap 64), embedding CamemBERT-bio, upsert pgvector. Exposer progression via Redis pub/sub.
-- [ ] **[P0]** Implémenter jobs Celery périodiques : `sync_ccam.py` (hebdomadaire ATIH), `sync_has.py` (mensuelle HAS), `sync_vidal.py` (quotidienne BDPM + Thériaque). Détection delta via `content_hash` SHA-256.
-- [ ] **[P0]** Implémenter `backend/app/routers/rag.py` : `POST /rag/query` — enrichir requête, chercher dans les 5 namespaces (NS4 uniquement si `patient_id` fourni), reranker, répondre via Claude avec prompt RAG (section 6). Retourner `{answer, sources: [{namespace, document_title, section}]}`.
+- [x] **[P0]** Implémenter `backend/app/routers/documents.py` : `POST /documents/upload` (multipart, max 50 Mo, PDF/DOCX uniquement), `GET /documents` (liste filtrée par `cabinet_id` ou globale pour admin), `DELETE /documents/{id}` (soft delete `deprecated=true` + exclusion chunks).
+- [x] **[P0]** Implémenter job Celery `backend/app/jobs/index_document.py` : extraction texte (pdfplumber pour PDF, python-docx pour DOCX), chunking sémantique (512 tokens, overlap 64), embedding CamemBERT-bio, upsert pgvector. Exposer progression via Redis pub/sub.
+- [x] **[P0]** Implémenter jobs Celery périodiques : `sync_ccam.py` (hebdomadaire ATIH), `sync_has.py` (mensuelle HAS), `sync_vidal.py` (quotidienne BDPM + Thériaque). Détection delta via `content_hash` SHA-256.
+- [x] **[P0]** Implémenter `backend/app/routers/rag.py` : `POST /rag/query` — enrichir requête, chercher dans les 5 namespaces (NS4 uniquement si `patient_id` fourni), reranker, répondre via Claude avec prompt RAG (section 6). Retourner `{answer, sources: [{namespace, document_title, section}]}`.
 
 ---
 

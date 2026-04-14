@@ -19,6 +19,10 @@ celery_app = Celery(
         "app.tasks.transcription",
         "app.tasks.embedding",
         "app.tasks.rag",
+        "app.jobs.index_document",
+        "app.jobs.sync_ccam",
+        "app.jobs.sync_has",
+        "app.jobs.sync_vidal",
     ],
 )
 
@@ -43,7 +47,22 @@ celery_app.conf.update(
     beat_schedule={
         "rebuild-bm25-index-nightly": {
             "task": "app.tasks.rag.rebuild_bm25_index",
-            "schedule": 86400,  # every 24h (in seconds)
+            "schedule": 86400,       # every 24h at 02:00 UTC
+            "options": {"queue": "ai"},
+        },
+        "sync-vidal-daily": {
+            "task": "app.jobs.sync_vidal.sync_vidal",
+            "schedule": 86400,       # every 24h at 03:00 UTC
+            "options": {"queue": "ai"},
+        },
+        "sync-ccam-weekly": {
+            "task": "app.jobs.sync_ccam.sync_ccam",
+            "schedule": 604800,      # every 7 days (Sunday 01:00 UTC)
+            "options": {"queue": "ai"},
+        },
+        "sync-has-monthly": {
+            "task": "app.jobs.sync_has.sync_has",
+            "schedule": 2592000,     # every 30 days (1st of month 01:30 UTC)
             "options": {"queue": "ai"},
         },
     },
