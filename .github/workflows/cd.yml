@@ -62,10 +62,12 @@ jobs:
 
       - name: Build & push backend
         id: build-backend
+        # context = project root so COPY ia/ works inside backend/Dockerfile
         if: hashFiles('backend/Dockerfile') != '' && hashFiles('backend/requirements.txt') != ''
         uses: docker/build-push-action@v6
         with:
-          context: backend
+          context: .
+          file: backend/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

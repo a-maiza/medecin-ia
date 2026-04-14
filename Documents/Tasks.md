@@ -59,24 +59,24 @@
 
 ## 3. Sécurité & Chiffrement
 
-- [ ] **[P0]** Implémenter `backend/app/security/encryption.py` : `encrypt(plaintext, patient_id) → {ciphertext_b64, nonce_b64}` et `decrypt(ciphertext_b64, nonce_b64, patient_id)` via AES-256-GCM, clé dérivée HKDF(master_key, patient_id).
-- [ ] **[P0]** Implémenter `backend/app/security/pseudonymizer.py` : wrapper Presidio (`AnalyzerEngine` + `AnonymizerEngine` configurés pour FR), table de correspondance token↔valeur en Redis avec TTL = durée de session.
-- [ ] **[P0]** Implémenter `backend/app/security/rls.py` : helpers `get_rls_context(cabinet_id, patient_id)` qui set les paramètres de session PostgreSQL pour les policies RLS.
-- [ ] **[P0]** Implémenter `backend/app/security/audit.py` : `log_event(event_type, doctor_rpps, patient_ins, cabinet_id, payload)` — calcule `content_hash = SHA-256(prev_hash + payload)`, insère dans `audit_log` (append-only). Exposer `verify_chain()` pour audit.
-- [ ] **[P0]** Configurer CORS FastAPI : `ALLOWED_ORIGINS` depuis env, TLS 1.3 enforced via reverse proxy (Nginx / Caddy), HSTS header.
-- [ ] **[P0]** Implémenter rate limiting Redis : middleware FastAPI qui incrémente `rate:{cabinet_id}:{minute}`, 429 après 100 req/min cabinet ou 10 req/min sur `/embed` et `/llm`.
-- [ ] **[P1]** Intégrer lecture clé maître depuis HSM OVHcloud (remplacer `PATIENT_ENCRYPTION_MASTER_KEY` env par appel API HSM en production).
+- [x] **[P0]** Implémenter `backend/app/security/encryption.py` : `encrypt(plaintext, patient_id) → {ciphertext_b64, nonce_b64}` et `decrypt(ciphertext_b64, nonce_b64, patient_id)` via AES-256-GCM, clé dérivée HKDF(master_key, patient_id).
+- [x] **[P0]** Implémenter `backend/app/security/pseudonymizer.py` : wrapper Presidio (`AnalyzerEngine` + `AnonymizerEngine` configurés pour FR), table de correspondance token↔valeur en Redis avec TTL = durée de session.
+- [x] **[P0]** Implémenter `backend/app/security/rls.py` : helpers `get_rls_context(cabinet_id, patient_id)` qui set les paramètres de session PostgreSQL pour les policies RLS.
+- [x] **[P0]** Implémenter `backend/app/security/audit.py` : `log_event(event_type, doctor_rpps, patient_ins, cabinet_id, payload)` — calcule `content_hash = SHA-256(prev_hash + payload)`, insère dans `audit_log` (append-only). Exposer `verify_chain()` pour audit.
+- [x] **[P0]** Configurer CORS FastAPI : `ALLOWED_ORIGINS` depuis env, TLS 1.3 enforced via reverse proxy (Nginx / Caddy), HSTS header.
+- [x] **[P0]** Implémenter rate limiting Redis : middleware FastAPI qui incrémente `rate:{cabinet_id}:{minute}`, 429 après 100 req/min cabinet ou 10 req/min sur `/embed` et `/llm`.
+- [x] **[P1]** Intégrer lecture clé maître depuis HSM OVHcloud (remplacer `PATIENT_ENCRYPTION_MASTER_KEY` env par appel API HSM en production).
 
 ---
 
 ## 4. Modèles IA on-premise
 
-- [ ] **[P0]** Écrire `ia/transcription/whisper_pipeline.py` : charger faster-whisper large-v3 sur GPU, exposer `transcribe_chunk(audio_pcm_16khz, initial_prompt) → {text, words: [{word, start, end, probability}], language}`. VAD webrtcvad aggressiveness=2, flush sur silence > 15 frames.
-- [ ] **[P0]** Écrire `ia/transcription/prompt_builder.py` : construire `initial_prompt` Whisper depuis spécialité médecin + liste médicaments actifs patient (utilisé pour améliorer la reconnaissance vocabulaire médical).
-- [ ] **[P0]** Écrire `ia/transcription/postprocessor.py` : normalisation abréviations (`"12 0 sur 8 0" → "120/80"`, etc.), NER médical (symptômes, médicaments, mesures) via règles + modèle spaCy `fr_core_news_lg`.
-- [ ] **[P0]** Charger CamemBERT-bio (`almanach/camembert-bio`) comme service embedding : `embed(texts: list[str]) → np.ndarray (N, 768)`, batch size adaptatif selon VRAM disponible.
-- [ ] **[P0]** Charger cross-encoder `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1` : `rerank(query, passages: list[str]) → list[float]`.
-- [ ] **[P1]** Migrer embedding vers DrBERT-7GB-cased : remplacer CamemBERT-bio, re-indexer tous les chunks existants (job Celery avec progress tracking).
+- [x] **[P0]** Écrire `ia/transcription/whisper_pipeline.py` : charger faster-whisper large-v3 sur GPU, exposer `transcribe_chunk(audio_pcm_16khz, initial_prompt) → {text, words: [{word, start, end, probability}], language}`. VAD webrtcvad aggressiveness=2, flush sur silence > 15 frames.
+- [x] **[P0]** Écrire `ia/transcription/prompt_builder.py` : construire `initial_prompt` Whisper depuis spécialité médecin + liste médicaments actifs patient (utilisé pour améliorer la reconnaissance vocabulaire médical).
+- [x] **[P0]** Écrire `ia/transcription/postprocessor.py` : normalisation abréviations (`"12 0 sur 8 0" → "120/80"`, etc.), NER médical (symptômes, médicaments, mesures) via règles + modèle spaCy `fr_core_news_lg`.
+- [x] **[P0]** Charger CamemBERT-bio (`almanach/camembert-bio`) comme service embedding : `embed(texts: list[str]) → np.ndarray (N, 768)`, batch size adaptatif selon VRAM disponible.
+- [x] **[P0]** Charger cross-encoder `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1` : `rerank(query, passages: list[str]) → list[float]`.
+- [x] **[P1]** Migrer embedding vers DrBERT-7GB-cased : remplacer CamemBERT-bio, re-indexer tous les chunks existants (job Celery avec progress tracking).
 
 ---
 

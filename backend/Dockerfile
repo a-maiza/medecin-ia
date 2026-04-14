@@ -3,7 +3,7 @@ FROM python:3.12-slim AS builder
 
 WORKDIR /build
 
-# Dépendances système nécessaires à la compilation (asyncpg, cryptography…)
+# Dépendances système (asyncpg, cryptography, webrtcvad…)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
@@ -30,8 +30,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copie des packages installés depuis le builder
 COPY --from=builder /install /usr/local
 
-# Code applicatif
+# Code applicatif + modules IA (ia/ is a peer directory — build context = project root)
 COPY --chown=appuser:appgroup app/ ./app/
+COPY --chown=appuser:appgroup ia/  ./ia/
+
+# ia/ must be importable from uvicorn (project root = /app → ia/ is at /app/ia/)
+ENV PYTHONPATH="/app"
 
 USER appuser
 

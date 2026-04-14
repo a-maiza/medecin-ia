@@ -10,6 +10,7 @@ pydantic-settings>=2.2.0
 
 # ── Database ──────────────────────────────────────────────────────────────────
 asyncpg>=0.29.0
+psycopg2-binary>=2.9.0         # sync DB client for Celery workers
 sqlalchemy[asyncio]>=2.0.0
 alembic>=1.13.0
 pgvector>=0.3.0                # pgvector Python client (SQLAlchemy type)
@@ -27,7 +28,10 @@ aiosmtplib>=3.0.0              # async SMTP for confirmation emails
 anthropic>=0.28.0
 sentence-transformers>=2.7.0   # CamemBERT-bio embedding + cross-encoder reranker
 faster-whisper>=1.0.0          # Whisper large-v3 transcription (on-premise GPU)
+soundfile>=0.12.0              # Audio I/O for Celery transcription tasks
+webrtcvad>=2.0.10              # Voice Activity Detection for transcription pipeline
 rank-bm25>=0.2.2               # BM25Okapi sparse retrieval
+numpy>=1.26.0                  # Required by embedding + reranker services
 
 # ── Security / PII ────────────────────────────────────────────────────────────
 presidio-analyzer>=2.2.0
