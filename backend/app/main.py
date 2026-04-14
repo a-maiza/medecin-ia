@@ -8,6 +8,7 @@ from app.core.config import get_settings
 from app.middleware.rate_limit import RateLimitMiddleware
 from app.routers import auth
 from app.routers import soap as soap_router
+from app.routers import transcription as transcription_router
 
 settings = get_settings()
 
@@ -70,6 +71,7 @@ Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 # ── Routers ───────────────────────────────────────────────────────────────────
 app.include_router(auth.router)
 app.include_router(soap_router.router)
+app.include_router(transcription_router.router)
 
 
 @app.get("/health", tags=["ops"])
