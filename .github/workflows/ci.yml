@@ -249,11 +249,12 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Build backend image
-        # Requires requirements.txt to exist — COPY fails in Dockerfile otherwise
+        # Build context = project root so COPY ia/ works (ia/ is a peer of backend/)
         if: hashFiles('backend/Dockerfile') != '' && hashFiles('backend/requirements.txt') != ''
         uses: docker/build-push-action@v6
         with:
-          context: backend
+          context: .
+          file: backend/Dockerfile
           push: false
           cache-from: type=gha,scope=backend
           cache-to: type=gha,mode=max,scope=backend

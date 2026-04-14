@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     EMAIL_FROM: str = "noreply@medecinai.fr"
     EMAIL_FROM_NAME: str = "MédecinAI"
 
+    # ── Redis / Celery ────────────────────────────────────────────────────────
+    REDIS_URL: str = "redis://localhost:6379/0"
+
     # ── App ───────────────────────────────────────────────────────────────────
     APP_ENV: str = "development"
     APP_BASE_URL: str = "http://localhost:3000"
