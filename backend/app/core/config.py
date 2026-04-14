@@ -29,6 +29,10 @@ class Settings(BaseSettings):
     # ── Redis / Celery ────────────────────────────────────────────────────────
     REDIS_URL: str = "redis://localhost:6379/0"
 
+    # ── Anthropic ─────────────────────────────────────────────────────────────
+    ANTHROPIC_API_KEY: str = ""
+    ANTHROPIC_MODEL: str = "claude-sonnet-4-6"
+
     # ── App ───────────────────────────────────────────────────────────────────
     APP_ENV: str = "development"
     APP_BASE_URL: str = "http://localhost:3000"

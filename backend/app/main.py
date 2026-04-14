@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
@@ -5,14 +7,30 @@ from prometheus_fastapi_instrumentator import Instrumentator
 from app.core.config import get_settings
 from app.middleware.rate_limit import RateLimitMiddleware
 from app.routers import auth
+from app.routers import soap as soap_router
 
 settings = get_settings()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Startup: open Redis pool. Shutdown: close it."""
+    import redis.asyncio as aioredis
+    app.state.redis = aioredis.from_url(
+        settings.REDIS_URL,
+        encoding="utf-8",
+        decode_responses=True,
+    )
+    yield
+    await app.state.redis.aclose()
+
 
 app = FastAPI(
     title="MédecinAI API",
     version="0.1.0",
     docs_url="/docs" if settings.APP_ENV != "production" else None,
     redoc_url="/redoc" if settings.APP_ENV != "production" else None,
+    lifespan=lifespan,
 )
 
 # ── Rate limiting (Redis) ─────────────────────────────────────────────────────
@@ -51,6 +69,7 @@ Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 
 # ── Routers ───────────────────────────────────────────────────────────────────
 app.include_router(auth.router)
+app.include_router(soap_router.router)
 
 
 @app.get("/health", tags=["ops"])
