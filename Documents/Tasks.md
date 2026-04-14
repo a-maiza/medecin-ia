@@ -82,15 +82,15 @@
 
 ## 5. Pipeline RAG
 
-- [ ] **[P0]** Écrire `ia/rag/retriever/hybrid_search.py` : orchestration parallèle dense (HNSW pgvector top-20) + sparse (BM25 top-20), fusion RRF(k=60) avec poids adaptatifs (dense 0.7/sparse 0.3 par défaut, sparse 0.7 si codes CCAM/CIM détectés).
-- [ ] **[P0]** Écrire `ia/rag/retriever/bm25_index.py` : construire et sérialiser un index `BM25Okapi` (rank_bm25) sur tous les chunks non-patient. Exposer `search(query, top_k) → list[(chunk_id, score)]`. Rebuilder chaque nuit via job Celery.
-- [ ] **[P0]** Écrire `ia/rag/retriever/patient_store.py` : `PatientVectorStore` avec filtre automatique `patient_id + cabinet_id` injectés sur toute recherche — impossible d'omettre le filtre en appelant cette classe.
-- [ ] **[P0]** Écrire `ia/rag/retriever/query_enricher.py` : enrichir la requête brute avec spécialité médecin + DFG + grossesse + traitements actifs + allergies du patient.
-- [ ] **[P0]** Écrire `ia/rag/reranker/cross_encoder.py` : wrapper cross-encoder, top-12 → scores → tri.
-- [ ] **[P0]** Écrire `ia/rag/reranker/medical_booster.py` : appliquer facteurs cliniques (×2.0 IRC si DFG < 60, ×2.0 grossesse, ×1.8 interaction détectée, ×1.3 spécialité) sur les scores après reranking.
-- [ ] **[P0]** Écrire `ia/rag/reranker/mmr.py` : Maximal Marginal Relevance, lambda=0.65, top-5 finaux diversifiés.
-- [ ] **[P0]** Écrire `ia/soap/prompt_assembler.py` : assembler le prompt 6 couches (system → safety context → RAG chunks → style médecin NS5 → transcript → instruction finale), respecter le system prompt défini en section 6.
-- [ ] **[P0]** Écrire `ia/soap/output_validator.py` : valider le JSON SOAP contre le `OUTPUT_SCHEMA` (section 6), vérifier que codes CCAM/CIM-10 correspondent à des chunks fournis (regex + lookup), score < 0.70 → alerte INFO.
+- [x] **[P0]** Écrire `ia/rag/retriever/hybrid_search.py` : orchestration parallèle dense (HNSW pgvector top-20) + sparse (BM25 top-20), fusion RRF(k=60) avec poids adaptatifs (dense 0.7/sparse 0.3 par défaut, sparse 0.7 si codes CCAM/CIM détectés).
+- [x] **[P0]** Écrire `ia/rag/retriever/bm25_index.py` : construire et sérialiser un index `BM25Okapi` (rank_bm25) sur tous les chunks non-patient. Exposer `search(query, top_k) → list[(chunk_id, score)]`. Rebuilder chaque nuit via job Celery.
+- [x] **[P0]** Écrire `ia/rag/retriever/patient_store.py` : `PatientVectorStore` avec filtre automatique `patient_id + cabinet_id` injectés sur toute recherche — impossible d'omettre le filtre en appelant cette classe.
+- [x] **[P0]** Écrire `ia/rag/retriever/query_enricher.py` : enrichir la requête brute avec spécialité médecin + DFG + grossesse + traitements actifs + allergies du patient.
+- [x] **[P0]** Écrire `ia/rag/reranker/cross_encoder.py` : wrapper cross-encoder, top-12 → scores → tri.
+- [x] **[P0]** Écrire `ia/rag/reranker/medical_booster.py` : appliquer facteurs cliniques (×2.0 IRC si DFG < 60, ×2.0 grossesse, ×1.8 interaction détectée, ×1.3 spécialité) sur les scores après reranking.
+- [x] **[P0]** Écrire `ia/rag/reranker/mmr.py` : Maximal Marginal Relevance, lambda=0.65, top-5 finaux diversifiés.
+- [x] **[P0]** Écrire `ia/soap/prompt_assembler.py` : assembler le prompt 6 couches (system → safety context → RAG chunks → style médecin NS5 → transcript → instruction finale), respecter le system prompt défini en section 6.
+- [x] **[P0]** Écrire `ia/soap/output_validator.py` : valider le JSON SOAP contre le `OUTPUT_SCHEMA` (section 6), vérifier que codes CCAM/CIM-10 correspondent à des chunks fournis (regex + lookup), score < 0.70 → alerte INFO.
 - [ ] **[P1]** Écrire `ia/rag/indexer/ccam_indexer.py` : download ATIH CCAM, parse XML/CSV, chunking sémantique, embedding, upsert pgvector avec `source='ccam'`.
 - [ ] **[P1]** Écrire `ia/rag/indexer/has_indexer.py` : download fiches HAS PDF via API HAS, extraction texte pdfplumber, chunking hiérarchique (titres → sections), embedding, upsert avec métadonnées `pathologie`, `has_grade`, `annee`.
 - [ ] **[P1]** Écrire `ia/rag/indexer/vidal_indexer.py` : download BDPM data.gouv.fr + Thériaque interactions, normalisation DCI minuscules, upsert table `drug_interactions`, embedding notices VIDAL pour NS3.
@@ -102,27 +102,27 @@
 
 ## 6. Service de génération SOAP
 
-- [ ] **[P0]** Implémenter `backend/app/services/soap_generator.py` : orchestrer query enrichment → RAG retrieval → interaction check → prompt assembly → appel Claude (streaming, temperature=0.15) → output validation → retour JSON SOAP.
-- [ ] **[P0]** Implémenter appel Claude Sonnet 4.6 en streaming : utiliser `anthropic.AsyncAnthropic`, stream section par section (S, O, A, P), envoyer les tokens via WebSocket au frontend.
-- [ ] **[P0]** Implémenter `backend/app/routers/soap.py` : `POST /soap/generate` (déclenche génération), `GET /soap/{consultation_id}` (retourne SOAP courant), `PATCH /soap/{consultation_id}` (sauvegarde éditions inline).
-- [ ] **[P0]** Implémenter `POST /soap/{consultation_id}/validate` : calculer diff généré↔validé, sauvegarder dans `Consultation.soap_validated`, créer `ValidationMetric`, déclencher indexation NS5 si score > 0.7, logger `soap_signed` dans audit_log.
+- [x] **[P0]** Implémenter `backend/app/services/soap_generator.py` : orchestrer query enrichment → RAG retrieval → interaction check → prompt assembly → appel Claude (streaming, temperature=0.15) → output validation → retour JSON SOAP.
+- [x] **[P0]** Implémenter appel Claude Sonnet 4.6 en streaming : utiliser `anthropic.AsyncAnthropic`, stream section par section (S, O, A, P), envoyer les tokens via WebSocket au frontend.
+- [x] **[P0]** Implémenter `backend/app/routers/soap.py` : `POST /soap/generate` (déclenche génération), `GET /soap/{consultation_id}` (retourne SOAP courant), `PATCH /soap/{consultation_id}` (sauvegarde éditions inline).
+- [x] **[P0]** Implémenter `POST /soap/{consultation_id}/validate` : calculer diff généré↔validé, sauvegarder dans `Consultation.soap_validated`, créer `ValidationMetric`, déclencher indexation NS5 si score > 0.7, logger `soap_signed` dans audit_log.
 
 ---
 
 ## 7. Service de transcription (WebSocket)
 
-- [ ] **[P0]** Implémenter `backend/app/routers/transcription.py` : WebSocket endpoint `/ws/transcription/{session_id}`. Recevoir chunks audio PCM (base64), appeler `WhisperPipeline.transcribe_chunk`, retourner `{text, words, is_final}` en streaming.
-- [ ] **[P0]** Implémenter auto-save chiffré toutes les 30s : à chaque flush Whisper, chiffrer le transcript partiel et `UPDATE Consultation SET transcript_encrypted = ...`.
-- [ ] **[P0]** Implémenter `backend/app/services/transcription.py` : gestion état session (début, chunks reçus, fin), coordination VAD + Whisper + postprocessor.
+- [x] **[P0]** Implémenter `backend/app/routers/transcription.py` : WebSocket endpoint `/ws/transcription/{session_id}`. Recevoir chunks audio PCM (base64), appeler `WhisperPipeline.transcribe_chunk`, retourner `{text, words, is_final}` en streaming.
+- [x] **[P0]** Implémenter auto-save chiffré toutes les 30s : à chaque flush Whisper, chiffrer le transcript partiel et `UPDATE Consultation SET transcript_encrypted = ...`.
+- [x] **[P0]** Implémenter `backend/app/services/transcription.py` : gestion état session (début, chunks reçus, fin), coordination VAD + Whisper + postprocessor.
 
 ---
 
 ## 8. Alertes cliniques
 
-- [ ] **[P0]** Implémenter `backend/app/services/interaction_checker.py` : normaliser DCI (table de 200+ entrées nom commercial → DCI minuscules), requête SQL `WHERE drug_a IN (...) AND drug_b IN (...)` sur `drug_interactions`, retourner liste triée par sévérité décroissante. Doit s'exécuter en < 5ms.
-- [ ] **[P0]** Implémenter logique de blocage SOAP : si `severity = 'CI_ABSOLUE'` → `soap = null`, `alerts` contient alerte CRITIQUE. Si `CI_RELATIVE` → idem, mais déblocable après justification. Si `PRECAUTION` → SOAP généré avec mention bloc P.
-- [ ] **[P0]** Implémenter alerte dosage DFG : lors de l'assemblage du prompt SOAP, vérifier via RAG NS3 si les médicaments prescrits ont une restriction rénale ; si DFG patient < seuil VIDAL → alerte ATTENTION ou CRITIQUE selon seuil.
-- [ ] **[P0]** Implémenter `backend/app/routers/interactions.py` : `POST /interactions/check` acceptant `{new_drugs, active_drugs}`, retournant la liste des interactions (utilisé par le frontend pour feedback temps réel pendant la saisie).
+- [x] **[P0]** Implémenter `backend/app/services/interaction_checker.py` : normaliser DCI (table de 200+ entrées nom commercial → DCI minuscules), requête SQL `WHERE drug_a IN (...) AND drug_b IN (...)` sur `drug_interactions`, retourner liste triée par sévérité décroissante. Doit s'exécuter en < 5ms.
+- [x] **[P0]** Implémenter logique de blocage SOAP : si `severity = 'CI_ABSOLUE'` → `soap = null`, `alerts` contient alerte CRITIQUE. Si `CI_RELATIVE` → idem, mais déblocable après justification. Si `PRECAUTION` → SOAP généré avec mention bloc P.
+- [x] **[P0]** Implémenter alerte dosage DFG : lors de l'assemblage du prompt SOAP, vérifier via RAG NS3 si les médicaments prescrits ont une restriction rénale ; si DFG patient < seuil VIDAL → alerte ATTENTION ou CRITIQUE selon seuil.
+- [x] **[P0]** Implémenter `backend/app/routers/interactions.py` : `POST /interactions/check` acceptant `{new_drugs, active_drugs}`, retournant la liste des interactions (utilisé par le frontend pour feedback temps réel pendant la saisie).
 
 ---
 
