@@ -18,6 +18,7 @@ celery_app = Celery(
     include=[
         "app.tasks.transcription",
         "app.tasks.embedding",
+        "app.tasks.rag",
     ],
 )
 
@@ -36,5 +37,14 @@ celery_app.conf.update(
     task_routes={
         "app.tasks.transcription.*": {"queue": "ai"},
         "app.tasks.embedding.*": {"queue": "ai"},
+        "app.tasks.rag.*": {"queue": "ai"},
+    },
+    # Nightly scheduled tasks (Celery beat)
+    beat_schedule={
+        "rebuild-bm25-index-nightly": {
+            "task": "app.tasks.rag.rebuild_bm25_index",
+            "schedule": 86400,  # every 24h (in seconds)
+            "options": {"queue": "ai"},
+        },
     },
 )
