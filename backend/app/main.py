@@ -7,8 +7,10 @@ from prometheus_fastapi_instrumentator import Instrumentator
 from app.core.config import get_settings
 from app.middleware.rate_limit import RateLimitMiddleware
 from app.routers import auth
+from app.routers import consultations as consultations_router
 from app.routers import documents as documents_router
 from app.routers import interactions as interactions_router
+from app.routers import patients as patients_router
 from app.routers import rag as rag_router
 from app.routers import soap as soap_router
 from app.routers import transcription as transcription_router
@@ -73,8 +75,10 @@ Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 
 # ── Routers ───────────────────────────────────────────────────────────────────
 app.include_router(auth.router)
+app.include_router(consultations_router.router)
 app.include_router(documents_router.router)
 app.include_router(interactions_router.router)
+app.include_router(patients_router.router)
 app.include_router(rag_router.router)
 app.include_router(soap_router.router)
 app.include_router(transcription_router.router)
