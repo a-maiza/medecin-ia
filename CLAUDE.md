@@ -207,3 +207,34 @@ All vectors live in a single `chunks` table, discriminated by `source`:
 - Always stream responses (`stream=True`) — SOAP is rendered section by section in the UI.
 - The SOAP output must be **pure JSON** matching the schema in `REQUIREMENTS.md §6`. Any non-JSON content is a validation failure.
 - CCAM and CIM-10 codes must be traceable to a chunk in `chunks_used` — never invent codes.
+
+## Git Workflow
+
+When working on tasks listed in Tasks.md:
+
+1. Before starting, create a new branch named `<type>/<task-number>-<brief-description>` from main,
+   where the branch type reflects the nature of the change:
+   - feat      → new features
+   - fix       → bug fixes
+   - docs      → documentation updates
+   - test      → tests
+   - refactor  → refactoring
+
+2. Use atomic commits with conventional commit messages.
+
+3. Once the task is finished, open a pull request that includes:
+   - A title matching the task description
+   - A brief summary of the changes made
+   - Any relevant testing notes or considerations
+   - An updated checkbox in TASKS.md to mark the task as complete
+
+## Testing Requirements
+
+Before marking any task as complete:
+
+1. Write unit tests for new functionality
+2. Run the full test suite
+3. If tests fail:
+   - Analyse the failure output
+   - Fix the code (not the tests, unless the tests are incorrect)
+   - Re-run tests until all pass

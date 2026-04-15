@@ -144,20 +144,20 @@
 
 ## 11. Export & Interopérabilité
 
-- [ ] **[P1]** Implémenter `backend/app/services/export_service.py` — conversion SOAP → ressource FHIR R4 `Composition` (Python `fhir.resources`). Valider contre le profil FHIR FR.
-- [ ] **[P1]** Implémenter export DMP : `POST /export/dmp/{consultation_id}` — requérir signature e-CPS active dans le contexte Auth, pousser vers MSSanté gateway, stocker `dmp_document_id` dans la consultation, logger `dmp_exported`.
-- [ ] **[P1]** Implémenter sync Doctolib : `POST /export/doctolib/{consultation_id}` — vérifier token Doctolib configuré pour le médecin, appel API Doctolib en parallèle de l'export DMP (`asyncio.gather`), notification UI si erreur.
-- [ ] **[P1]** Implémenter génération PDF signé : `GET /export/pdf/{consultation_id}` — utiliser `reportlab` ou `weasyprint`, inclure 4 sections SOAP, nom/RPPS médecin, date, logo cabinet. Retourner PDF en streaming.
-- [ ] **[P1]** Implémenter `backend/app/routers/export.py` orchestrant les 3 canaux avec gestion d'erreur isolée (échec DMP ne bloque pas PDF).
+- [x] **[P1]** Implémenter `backend/app/services/export_service.py` — conversion SOAP → ressource FHIR R4 `Composition` (Python `fhir.resources`). Valider contre le profil FHIR FR.
+- [x] **[P1]** Implémenter export DMP : `POST /export/dmp/{consultation_id}` — requérir signature e-CPS active dans le contexte Auth, pousser vers MSSanté gateway, stocker `dmp_document_id` dans la consultation, logger `dmp_exported`.
+- [x] **[P1]** Implémenter sync Doctolib : `POST /export/doctolib/{consultation_id}` — vérifier token Doctolib configuré pour le médecin, appel API Doctolib en parallèle de l'export DMP (`asyncio.gather`), notification UI si erreur.
+- [x] **[P1]** Implémenter génération PDF signé : `GET /export/pdf/{consultation_id}` — utiliser `reportlab` ou `weasyprint`, inclure 4 sections SOAP, nom/RPPS médecin, date, logo cabinet. Retourner PDF en streaming.
+- [x] **[P1]** Implémenter `backend/app/routers/export.py` orchestrant les 3 canaux avec gestion d'erreur isolée (échec DMP ne bloque pas PDF).
 
 ---
 
 ## 12. Abonnement & Facturation
 
-- [ ] **[P1]** Configurer produits Stripe : 3 plans (Solo ~150€, Cabinet, Réseau) avec `Price` récurrents mensuels. Stocker les `Price ID` dans les env vars.
-- [ ] **[P1]** Implémenter `POST /billing/checkout` : créer session Stripe Checkout, rediriger vers page paiement. Implémenter `POST /billing/portal` : portail Stripe Customer Portal pour gestion/annulation.
-- [ ] **[P1]** Implémenter webhook Stripe `POST /webhooks/stripe` : vérifier signature (`stripe.Webhook.construct_event`), gérer `invoice.paid`, `customer.subscription.updated`, `customer.subscription.deleted` — mettre à jour `Subscription.status` en base.
-- [ ] **[P1]** Implémenter garde d'accès : middleware FastAPI vérifiant que le cabinet a un abonnement actif ou trial valide (`trial_ends_at > now()`). Lecture seule si expiré (pas de nouvelle consultation).
+- [x] **[P1]** Configurer produits Stripe : 3 plans (Solo ~150€, Cabinet, Réseau) avec `Price` récurrents mensuels. Stocker les `Price ID` dans les env vars.
+- [x] **[P1]** Implémenter `POST /billing/checkout` : créer session Stripe Checkout, rediriger vers page paiement. Implémenter `POST /billing/portal` : portail Stripe Customer Portal pour gestion/annulation.
+- [x] **[P1]** Implémenter webhook Stripe `POST /webhooks/stripe` : vérifier signature (`stripe.Webhook.construct_event`), gérer `invoice.paid`, `customer.subscription.updated`, `customer.subscription.deleted` — mettre à jour `Subscription.status` en base.
+- [x] **[P1]** Implémenter garde d'accès : middleware FastAPI vérifiant que le cabinet a un abonnement actif ou trial valide (`trial_ends_at > now()`). Lecture seule si expiré (pas de nouvelle consultation).
 
 ---
 
