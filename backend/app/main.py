@@ -9,6 +9,7 @@ from app.middleware.rate_limit import RateLimitMiddleware
 from app.routers import auth
 from app.routers import consultations as consultations_router
 from app.routers import documents as documents_router
+from app.routers import export as export_router
 from app.routers import interactions as interactions_router
 from app.routers import patients as patients_router
 from app.routers import rag as rag_router
@@ -77,6 +78,7 @@ Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 app.include_router(auth.router)
 app.include_router(consultations_router.router)
 app.include_router(documents_router.router)
+app.include_router(export_router.router)
 app.include_router(interactions_router.router)
 app.include_router(patients_router.router)
 app.include_router(rag_router.router)
