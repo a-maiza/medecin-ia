@@ -41,6 +41,13 @@ class Settings(BaseSettings):
     # ── Security ──────────────────────────────────────────────────────────────
     PATIENT_ENCRYPTION_MASTER_KEY: str = ""
 
+    # ── Stripe ────────────────────────────────────────────────────────────────
+    STRIPE_SECRET_KEY: str = ""
+    STRIPE_WEBHOOK_SECRET: str = ""
+    STRIPE_PRICE_SOLO: str = ""     # Price ID for Plan Solo (~150 €/mois)
+    STRIPE_PRICE_CABINET: str = ""  # Price ID for Plan Cabinet
+    STRIPE_PRICE_RESEAU: str = ""   # Price ID for Plan Réseau
+
     @field_validator("ALLOWED_ORIGINS", mode="before")
     @classmethod
     def parse_origins(cls, v: str | list) -> list[str]:

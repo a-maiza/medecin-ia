@@ -6,7 +6,9 @@ from prometheus_fastapi_instrumentator import Instrumentator
 
 from app.core.config import get_settings
 from app.middleware.rate_limit import RateLimitMiddleware
+from app.middleware.subscription_guard import SubscriptionGuardMiddleware
 from app.routers import auth
+from app.routers import billing as billing_router
 from app.routers import consultations as consultations_router
 from app.routers import documents as documents_router
 from app.routers import export as export_router
@@ -38,6 +40,14 @@ app = FastAPI(
     docs_url="/docs" if settings.APP_ENV != "production" else None,
     redoc_url="/redoc" if settings.APP_ENV != "production" else None,
     lifespan=lifespan,
+)
+
+# ── Subscription guard ────────────────────────────────────────────────────────
+# Blocks mutation requests from cabinets with an expired subscription/trial.
+# Added before RateLimitMiddleware (LIFO: executes after rate limit).
+app.add_middleware(
+    SubscriptionGuardMiddleware,
+    enabled=settings.APP_ENV != "test",
 )
 
 # ── Rate limiting (Redis) ─────────────────────────────────────────────────────
@@ -76,6 +86,7 @@ Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 
 # ── Routers ───────────────────────────────────────────────────────────────────
 app.include_router(auth.router)
+app.include_router(billing_router.router)
 app.include_router(consultations_router.router)
 app.include_router(documents_router.router)
 app.include_router(export_router.router)
