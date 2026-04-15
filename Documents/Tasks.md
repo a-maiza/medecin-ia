@@ -91,12 +91,12 @@
 - [x] **[P0]** Écrire `ia/rag/reranker/mmr.py` : Maximal Marginal Relevance, lambda=0.65, top-5 finaux diversifiés.
 - [x] **[P0]** Écrire `ia/soap/prompt_assembler.py` : assembler le prompt 6 couches (system → safety context → RAG chunks → style médecin NS5 → transcript → instruction finale), respecter le system prompt défini en section 6.
 - [x] **[P0]** Écrire `ia/soap/output_validator.py` : valider le JSON SOAP contre le `OUTPUT_SCHEMA` (section 6), vérifier que codes CCAM/CIM-10 correspondent à des chunks fournis (regex + lookup), score < 0.70 → alerte INFO.
-- [ ] **[P1]** Écrire `ia/rag/indexer/ccam_indexer.py` : download ATIH CCAM, parse XML/CSV, chunking sémantique, embedding, upsert pgvector avec `source='ccam'`.
-- [ ] **[P1]** Écrire `ia/rag/indexer/has_indexer.py` : download fiches HAS PDF via API HAS, extraction texte pdfplumber, chunking hiérarchique (titres → sections), embedding, upsert avec métadonnées `pathologie`, `has_grade`, `annee`.
-- [ ] **[P1]** Écrire `ia/rag/indexer/vidal_indexer.py` : download BDPM data.gouv.fr + Thériaque interactions, normalisation DCI minuscules, upsert table `drug_interactions`, embedding notices VIDAL pour NS3.
-- [ ] **[P1]** Écrire `ia/rag/indexer/patient_indexer.py` : indexer le transcript + SOAP validé d'une consultation dans NS4, chiffrement AES-256-GCM du texte, embedding on-premise obligatoire.
-- [ ] **[P1]** Écrire `ia/rag/indexer/doctor_style_indexer.py` (NS5) : à chaque validation SOAP, calculer `quality_score` (similarité cosinus généré↔validé), créer `DoctorStyleChunk` si score > 0.7, indexer dans pgvector.
-- [ ] **[P1]** Écrire `ia/soap/style_learner.py` : récupérer top-3 `DoctorStyleChunk` par `(doctor_id, motif_key)` pour injection few-shot dans le prompt SOAP.
+- [x] **[P1]** Écrire `ia/rag/indexer/ccam_indexer.py` : download ATIH CCAM, parse XML/CSV, chunking sémantique, embedding, upsert pgvector avec `source='ccam'`.
+- [x] **[P1]** Écrire `ia/rag/indexer/has_indexer.py` : download fiches HAS PDF via API HAS, extraction texte pdfplumber, chunking hiérarchique (titres → sections), embedding, upsert avec métadonnées `pathologie`, `has_grade`, `annee`.
+- [x] **[P1]** Écrire `ia/rag/indexer/vidal_indexer.py` : download BDPM data.gouv.fr + Thériaque interactions, normalisation DCI minuscules, upsert table `drug_interactions`, embedding notices VIDAL pour NS3.
+- [x] **[P1]** Écrire `ia/rag/indexer/patient_indexer.py` : indexer le transcript + SOAP validé d'une consultation dans NS4, chiffrement AES-256-GCM du texte, embedding on-premise obligatoire.
+- [x] **[P1]** Écrire `ia/rag/indexer/doctor_style_indexer.py` (NS5) : à chaque validation SOAP, calculer `quality_score` (similarité cosinus généré↔validé), créer `DoctorStyleChunk` si score > 0.7, indexer dans pgvector.
+- [x] **[P1]** Écrire `ia/soap/style_learner.py` : récupérer top-3 `DoctorStyleChunk` par `(doctor_id, motif_key)` pour injection few-shot dans le prompt SOAP.
 
 ---
 
@@ -164,34 +164,34 @@
 ## 13. Interface Frontend
 
 ### Authentification & Onboarding
-- [ ] **[P0]** Pages `(auth)/login` et `(auth)/register` avec Auth0 provider. Afficher CGU/politique de confidentialité à l'inscription (case à cocher obligatoire).
-- [ ] **[P0]** Flow onboarding `(auth)/onboarding` : 3 étapes avec stepper shadcn/ui — saisie profil médecin, ajout premier patient de test, lancement consultation démo.
+- [x] **[P0]** Pages `(auth)/login` et `(auth)/register` avec Auth0 provider. Afficher CGU/politique de confidentialité à l'inscription (case à cocher obligatoire).
+- [x] **[P0]** Flow onboarding `(auth)/onboarding` : 3 étapes avec stepper shadcn/ui — saisie profil médecin, ajout premier patient de test, lancement consultation démo.
 
 ### Consultation
-- [ ] **[P0]** Page `(dashboard)/consultation/new` : sélection patient, bouton "Démarrer l'enregistrement", visualisation transcription live (tokens WebSocket avec surlignage couleur : orange si probabilité < 70%, rouge si < 50%).
-- [ ] **[P0]** Composant `consultation/TranscriptViewer` : affichage streaming des mots avec couleur par niveau de confiance, indicateur d'enregistrement.
-- [ ] **[P0]** Composant `consultation/SOAPEditor` : affichage section par section (S, O, A, P) en streaming, champs éditables inline, badges alertes avec modalité d'acquittement.
-- [ ] **[P0]** Logique de blocage UI : bouton "Valider et signer" désactivé si alerte CRITIQUE non acquittée. Champ "justification clinique" affiché obligatoire pour CI_RELATIVE.
-- [ ] **[P0]** Auto-save visuel toutes les 30s avec indicateur de sauvegarde.
+- [x] **[P0]** Page `(dashboard)/consultation/new` : sélection patient, bouton "Démarrer l'enregistrement", visualisation transcription live (tokens WebSocket avec surlignage couleur : orange si probabilité < 70%, rouge si < 50%).
+- [x] **[P0]** Composant `consultation/TranscriptViewer` : affichage streaming des mots avec couleur par niveau de confiance, indicateur d'enregistrement.
+- [x] **[P0]** Composant `consultation/SOAPEditor` : affichage section par section (S, O, A, P) en streaming, champs éditables inline, badges alertes avec modalité d'acquittement.
+- [x] **[P0]** Logique de blocage UI : bouton "Valider et signer" désactivé si alerte CRITIQUE non acquittée. Champ "justification clinique" affiché obligatoire pour CI_RELATIVE.
+- [x] **[P0]** Auto-save visuel toutes les 30s avec indicateur de sauvegarde.
 
 ### RAG / Chat
-- [ ] **[P0]** Composant `rag/ClinicalChat` : input question naturelle, affichage réponse Claude en streaming, citations sources (namespace + titre + section) avec lien cliquable vers le document.
+- [x] **[P0]** Composant `rag/ClinicalChat` : input question naturelle, affichage réponse Claude en streaming, citations sources (namespace + titre + section) avec lien cliquable vers le document.
 
 ### Base de connaissances
-- [ ] **[P0]** Page `(dashboard)/knowledge-base` : liste des documents privés cabinet avec statut d'indexation, bouton upload (PDF/DOCX, 50 Mo max), suppression.
-- [ ] **[P0]** Indicateur de progression Celery : polling `GET /documents/{id}/status` toutes les 2s pendant indexation, barre de progression shadcn.
-- [ ] **[P1]** Page `(admin)/knowledge-base` : upload documents globaux (HAS, CCAM, VIDAL), liste avec filtre par source, soft delete, métriques de la base (nb chunks par namespace).
+- [x] **[P0]** Page `(dashboard)/knowledge-base` : liste des documents privés cabinet avec statut d'indexation, bouton upload (PDF/DOCX, 50 Mo max), suppression.
+- [x] **[P0]** Indicateur de progression Celery : polling `GET /documents/{id}/status` toutes les 2s pendant indexation, barre de progression shadcn.
+- [x] **[P1]** Page `(admin)/knowledge-base` : upload documents globaux (HAS, CCAM, VIDAL), liste avec filtre par source, soft delete, métriques de la base (nb chunks par namespace).
 
 ### Patients
-- [ ] **[P0]** Page `(dashboard)/patients` : liste patients cabinet, recherche par nom/INS, création dossier patient.
-- [ ] **[P0]** Page `(dashboard)/patients/[id]` : fiche patient avec données déchiffrées (nom, allergies, traitements, antécédents), mise à jour DFG, liste consultations passées.
+- [x] **[P0]** Page `(dashboard)/patients` : liste patients cabinet, recherche par nom/INS, création dossier patient.
+- [x] **[P0]** Page `(dashboard)/patients/[id]` : fiche patient avec données déchiffrées (nom, allergies, traitements, antécédents), mise à jour DFG, liste consultations passées.
 
 ### Paramètres
-- [ ] **[P0]** Page `(dashboard)/settings` : profil médecin, spécialité, configuration token Doctolib (champ masqué).
-- [ ] **[P1]** Section abonnement : plan actuel, date fin trial/renouvellement, bouton upgrade (Stripe Checkout), bouton gérer (Stripe Portal).
+- [x] **[P0]** Page `(dashboard)/settings` : profil médecin, spécialité, configuration token Doctolib (champ masqué).
+- [x] **[P1]** Section abonnement : plan actuel, date fin trial/renouvellement, bouton upgrade (Stripe Checkout), bouton gérer (Stripe Portal).
 
 ### Admin
-- [ ] **[P1]** Page `(admin)/dashboard` : liste cabinets + statut abonnement, métriques RAG (score moyen par namespace, p50/p95 latence), accessible uniquement `role='admin_medecinai'`.
+- [x] **[P1]** Page `(admin)/dashboard` : liste cabinets + statut abonnement, métriques RAG (score moyen par namespace, p50/p95 latence), accessible uniquement `role='admin_medecinai'`.
 
 ---
 
