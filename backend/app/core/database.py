@@ -1,6 +1,10 @@
 import os
 
+from dotenv import load_dotenv
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
+# Load .env before reading env vars (no-op if already set or file absent)
+load_dotenv()
 
 DATABASE_URL = os.environ["DATABASE_URL"]
 

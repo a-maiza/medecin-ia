@@ -271,6 +271,11 @@ def upgrade() -> None:
         "ADD COLUMN has_grade VARCHAR(10) "
         "GENERATED ALWAYS AS (metadata->>'has_grade') STORED"
     )
+    op.execute(
+        "ALTER TABLE chunk "
+        "ADD COLUMN cabinet_id UUID "
+        "GENERATED ALWAYS AS ((metadata->>'cabinet_id')::uuid) STORED"
+    )
 
     # ── drug_interaction ──────────────────────────────────────────────────────
     op.create_table(

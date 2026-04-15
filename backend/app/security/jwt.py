@@ -119,3 +119,8 @@ async def get_token_payload(
     Used by POST /auth/register where the Medecin row does not exist yet.
     """
     return _verify_token(credentials.credentials, settings)
+
+
+def verify_token(token: str) -> TokenPayload:
+    """Public alias used by WebSocket auth (no FastAPI Depends context)."""
+    return _verify_token(token, get_settings())
