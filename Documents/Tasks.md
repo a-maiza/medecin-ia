@@ -197,8 +197,8 @@
 
 ## 14. Tests
 
-- [ ] **[P0]** Tests unitaires `backend/tests/` : `test_encryption.py` (round-trip AES, dérivation HKDF), `test_audit.py` (chaînage hashes, append-only), `test_interaction_checker.py` (normalisation DCI, sévérités), `test_soap_validator.py` (JSON schema, codes CCAM/CIM invalides rejetés).
-- [ ] **[P0]** Tests intégration : `test_rag_pipeline.py` avec base de test PostgreSQL + fixtures chunks — vérifier isolation patient, seuil score 0.65, format sources retournées.
-- [ ] **[P0]** Tests WebSocket transcription : mock faster-whisper, vérifier format messages streaming, auto-save toutes les 30s.
+- [x] **[P0]** Tests unitaires `backend/tests/` : `test_encryption.py` (round-trip AES, dérivation HKDF), `test_audit.py` (chaînage hashes, append-only), `test_interaction_checker.py` (normalisation DCI, sévérités), `test_soap_validator.py` (JSON schema, codes CCAM/CIM invalides rejetés).
+- [x] **[P0]** Tests intégration : `test_rag_pipeline.py` avec base de test PostgreSQL + fixtures chunks — vérifier isolation patient, seuil score 0.65, format sources retournées.
+- [x] **[P0]** Tests WebSocket transcription : mock faster-whisper, vérifier format messages streaming, auto-save toutes les 30s.
 - [ ] **[P1]** Tests end-to-end (Playwright) : flow inscription → onboarding → création consultation → transcription → SOAP → validation → export PDF.
 - [ ] **[P1]** Tests de charge (Locust) : 50 connexions WebSocket simultanées, vérifier latence transcription < 1s perçue ; 100 req/min endpoint RAG, vérifier rate limiting 429 au-delà.
