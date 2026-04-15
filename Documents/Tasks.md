@@ -137,8 +137,8 @@
 
 ## 10. Dossiers patients
 
-- [ ] **[P0]** Implémenter `backend/app/services/patient_service.py` + `backend/app/routers/patients.py` : CRUD patient avec chiffrement AES-256-GCM sur `nom`, `allergies`, `traitements_actifs`, `antecedents`. Cache Redis sur `patient_id` (TTL 5min, jamais de cache NS4). Recherche par `nom` (déchiffrement à la volée) ou `ins`.
-- [ ] **[P0]** Implémenter `backend/app/routers/consultations.py` : `POST /consultations` (créer), `GET /consultations/{id}` (retourner avec SOAP déchiffré), `GET /patients/{id}/consultations` (historique filtré cabinet).
+- [x] **[P0]** Implémenter `backend/app/services/patient_service.py` + `backend/app/routers/patients.py` : CRUD patient avec chiffrement AES-256-GCM sur `nom`, `allergies`, `traitements_actifs`, `antecedents`. Cache Redis sur `patient_id` (TTL 5min, jamais de cache NS4). Recherche par `nom` (déchiffrement à la volée) ou `ins`.
+- [x] **[P0]** Implémenter `backend/app/routers/consultations.py` : `POST /consultations` (créer), `GET /consultations/{id}` (retourner avec SOAP déchiffré), `GET /patients/{id}/consultations` (historique filtré cabinet).
 
 ---
 
